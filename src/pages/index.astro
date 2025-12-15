@@ -1,0 +1,29 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Directory from '../components/Directory.jsx';
+
+const LIVE_DATA_URL = "https://script.google.com/macros/s/AKfycbyvEJvNE4Xi_qtp3vm0GFLjTooG3ES14hXSRlaf0vxm6voCiwKTdEDxH2sYw6mtDPqakw/exec"; 
+const response = await fetch(LIVE_DATA_URL);
+const data = await response.json();
+
+// HELPER: Create a "slug" ID from the name (e.g. "Dr. Lee" -> "dr-lee")
+const createId = (name) => {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+};
+
+const doctors = data
+  .filter(d => d.name && d.name !== "Unknown")
+  .map(d => ({
+    id: d.id || createId(d.name), // Use Name-based ID if real ID is missing
+    name: d.name,
+    specialty: d.specialty || "General",
+    hospital: d.hospital || "Hospital",
+    location: d.city || "Malaysia",
+    image: d.image || "https://placehold.co/100",
+    languages: d.languages || ""
+  }));
+---
+
+<Layout title="Ocha Healthcare">
+	<Directory client:load doctors={doctors} />
+</Layout>
