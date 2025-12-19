@@ -1,29 +1,105 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Directory from '../components/Directory.jsx';
+import { Heart, Activity, Bone, Stethoscope } from 'lucide-react';
 
-const LIVE_DATA_URL = "https://script.google.com/macros/s/AKfycbyvEJvNE4Xi_qtp3vm0GFLjTooG3ES14hXSRlaf0vxm6voCiwKTdEDxH2sYw6mtDPqakw/exec"; 
-const response = await fetch(LIVE_DATA_URL);
-const data = await response.json();
+// 🔴 YOUR WEB APP URL
+const LIVE_DATA_URL = "https://script.google.com/macros/s/AKfycbyvEJvNE4Xi_qtp3vm0GFLjTooG3ES14hXSRlaf0vxm6voCiwKTdEDxH2sYw6mtDPqakw/exec";
 
-// HELPER: Create a "slug" ID from the name (e.g. "Dr. Lee" -> "dr-lee")
-const createId = (name) => {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-};
+let allDoctors = [];
+let error = false;
 
-const doctors = data
-  .filter(d => d.name && d.name !== "Unknown")
-  .map(d => ({
-    id: d.id || createId(d.name), // Use Name-based ID if real ID is missing
-    name: d.name,
-    specialty: d.specialty || "General",
-    hospital: d.hospital || "Hospital",
-    location: d.city || "Malaysia",
-    image: d.image || "https://placehold.co/100",
-    languages: d.languages || ""
+try {
+  const response = await fetch(LIVE_DATA_URL);
+  if (!response.ok) throw new Error('Network response was not ok');
+  
+  const rawData = await response.json();
+  
+  allDoctors = rawData.map(doc => ({
+    ...doc,
+    id: doc.name ? doc.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : 'unknown'
   }));
+
+} catch (e) {
+  console.error("Fetch failed:", e);
+  error = true;
+}
+
+const specialties = [
+  { name: 'Cardiology', icon: Heart, desc: 'Heart & Vascular' },
+  { name: 'Oncology', icon: Activity, desc: 'Cancer Care' },
+  { name: 'Orthopedic', icon: Bone, desc: 'Bone & Joint' },
+  { name: 'Checkup', icon: Stethoscope, desc: 'Health Screening' },
+];
 ---
 
-<Layout title="Ocha Healthcare">
-	<Directory client:load doctors={doctors} />
+<Layout title="Ocha Healthcare | Medical Concierge Services">
+  <main class="mb-20">
+    
+    {/* === PREMIUM HERO SECTION === */}
+    <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+      
+      {/* Background Decor (Subtle Gradient Blobs) */}
+      <div class="absolute inset-0 bg-slate-50 -z-10"></div>
+      <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+      <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-50/50 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+
+      <div class="max-w-7xl mx-auto px-4 text-center relative z-10">
+        <span class="inline-block py-1 px-3 rounded-full bg-blue-50 border border-blue-100 text-[#276CA1] text-xs font-bold uppercase tracking-wider mb-6">
+          Premium Medical Concierge
+        </span>
+        <h1 class="font-serif text-5xl md:text-7xl text-slate-900 tracking-tight mb-6 leading-tight">
+          World-Class Care for <br />
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#276CA1] to-[#1e4b7a]">
+            Your Loved Ones
+          </span>
+        </h1>
+        <p class="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
+          We connect you with Malaysia's most trusted specialists and hospitals. 
+          Experience seamless healthcare planning from start to finish.
+        </p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="#doctors" class="px-8 py-4 bg-[#276CA1] text-white font-bold rounded-full hover:bg-[#1f5682] transition-all shadow-xl shadow-blue-900/10 hover:shadow-blue-900/20 transform hover:-translate-y-0.5">
+            Find a Specialist
+          </a>
+          <a href="https://wa.me/60166062534" class="px-8 py-4 bg-white text-slate-900 font-bold rounded-full border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm">
+            Talk to Concierge
+          </a>
+        </div>
+      </div>
+    </section>
+
+    {/* === SPECIALTIES GRID === */}
+    <section class="py-12 -mt-10 relative z-20 px-4">
+      <div class="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
+        {specialties.map((item) => (
+          <div class="group p-6 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg shadow-slate-200/50 border border-white hover:border-blue-50 hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 text-center cursor-default">
+            <div class="w-12 h-12 mx-auto bg-blue-50 text-[#276CA1] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <item.icon className="w-6 h-6" />
+            </div>
+            <div class="text-slate-900 font-bold text-lg">{item.name}</div>
+            <div class="text-slate-400 text-xs uppercase tracking-wide mt-1">{item.desc}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    {/* === DOCTOR DIRECTORY === */}
+    <section id="doctors" class="max-w-7xl mx-auto px-4 mt-16">
+      <div class="text-center mb-12">
+        <h2 class="font-serif text-3xl md:text-4xl text-slate-900 mb-4">Curated Specialists</h2>
+        <div class="h-1 w-20 bg-[#276CA1] mx-auto rounded-full opacity-20"></div>
+      </div>
+
+      {error ? (
+        <div class="p-8 bg-red-50 text-red-600 rounded-xl text-center border border-red-100">
+          <p class="font-bold">System Maintenance</p>
+          <p class="text-sm">We are currently syncing our database. Please try again shortly.</p>
+        </div>
+      ) : (
+        <Directory client:load doctors={allDoctors} />
+      )}
+    </section>
+
+  </main>
 </Layout>
