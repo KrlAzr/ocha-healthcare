@@ -4,10 +4,10 @@ import { Search, MapPin, Filter, Building2, Stethoscope } from 'lucide-react';
 export default function Directory({ doctors }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All');
+  const [selectedLocation, setSelectedLocation] = useState('All'); // New State
   const WA_NUMBER = "60166062534"; 
 
-  const specialties = ['All', ...new Set(doctors.map(d => d.specialty).filter(Boolean))];
-
+  // Helper 1: Generate safe ID
   const generateId = (name) => {
     if (!name) return 'unknown';
     return name.toLowerCase().trim()
@@ -15,6 +15,7 @@ export default function Directory({ doctors }) {
       .replace(/^-+|-+$/g, '');   
   };
 
+  // Helper 2: Extract State from Full Address
   const getStateFromLocation = (fullAddress) => {
     if (!fullAddress) return null;
     const lowerAddr = fullAddress.toLowerCase();
@@ -26,36 +27,49 @@ export default function Directory({ doctors }) {
     return 'Malaysia';
   };
 
-  // ⚡ NEW: Helper to split specialty string
+  // Helper 3: Split specialty string
   const parseSpecialty = (raw) => {
     if (!raw) return { main: '', sub: '' };
-    
-    // Split by "Subspesialis:" or "Subspesialis" or just a comma if formatted that way
-    // Regex explanation: Looks for comma followed by optional space, then "Subspesialis" followed by optional colon
     const parts = raw.split(/,\s*subspesialis:?|subspesialis:?/i);
-    
     return {
       main: parts[0] ? parts[0].trim() : '',
       sub: parts[1] ? parts[1].trim() : ''
     };
   };
 
+  // Get unique specialties
+  const specialties = ['All', ...new Set(doctors.map(d => d.specialty).filter(Boolean))];
+
+  // Get unique locations (New)
+  const locations = ['All', ...new Set(doctors.map(d => getStateFromLocation(d.location)).filter(Boolean))];
+
   const filteredDoctors = doctors.filter(doctor => {
     const term = searchTerm.toLowerCase();
+    const doctorState = getStateFromLocation(doctor.location);
+
+    // 1. Search Logic
     const matchesSearch = (
       doctor.name?.toLowerCase().includes(term) ||
       doctor.hospital?.toLowerCase().includes(term) ||
       doctor.specialty?.toLowerCase().includes(term) ||
       doctor.location?.toLowerCase().includes(term)
     );
+
+    // 2. Specialty Logic
     const matchesSpecialty = selectedSpecialty === 'All' || doctor.specialty === selectedSpecialty;
-    return matchesSearch && matchesSpecialty;
+
+    // 3. Location Logic (New)
+    const matchesLocation = selectedLocation === 'All' || doctorState === selectedLocation;
+
+    return matchesSearch && matchesSpecialty && matchesLocation;
   });
 
   return (
     <div className="w-full">
       {/* === SEARCH & FILTER BAR === */}
-      <div className="bg-white p-2 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 mb-12 flex flex-col md:flex-row gap-2 max-w-4xl mx-auto">
+      <div className="bg-white p-2 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 mb-12 flex flex-col md:flex-row gap-2 max-w-5xl mx-auto">
+        
+        {/* Search Input */}
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
           <input
@@ -66,10 +80,36 @@ export default function Directory({ doctors }) {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="h-px md:h-10 bg-slate-100 md:w-px my-auto"></div>
-        <div className="relative min-w-[220px]">
+
+        {/* Divider (Desktop) */}
+        <div className="hidden md:block w-px bg-slate-100 my-2"></div>
+
+        {/* Location Dropdown (New) */}
+        <div className="relative min-w-[160px] md:max-w-[200px]">
+          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
           <select
-            className="w-full px-4 py-3 bg-transparent rounded-xl focus:outline-none focus:bg-slate-50 cursor-pointer text-slate-600 font-medium"
+            className="w-full pl-10 pr-8 py-3 bg-transparent rounded-xl focus:outline-none focus:bg-slate-50 cursor-pointer text-slate-600 font-medium appearance-none truncate"
+            value={selectedLocation}
+            onChange={(e) => setSelectedLocation(e.target.value)}
+          >
+            {locations.map((loc, idx) => (
+              <option key={idx} value={loc}>{loc === 'All' ? 'All Locations' : loc}</option>
+            ))}
+          </select>
+          {/* Custom Arrow Icon */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+          </div>
+        </div>
+
+        {/* Divider (Desktop) */}
+        <div className="hidden md:block w-px bg-slate-100 my-2"></div>
+
+        {/* Specialty Dropdown */}
+        <div className="relative min-w-[180px] md:max-w-[240px]">
+          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+          <select
+            className="w-full pl-10 pr-8 py-3 bg-transparent rounded-xl focus:outline-none focus:bg-slate-50 cursor-pointer text-slate-600 font-medium appearance-none truncate"
             value={selectedSpecialty}
             onChange={(e) => setSelectedSpecialty(e.target.value)}
           >
@@ -77,7 +117,12 @@ export default function Directory({ doctors }) {
               <option key={idx} value={spec}>{spec === 'All' ? 'All Specialties' : spec}</option>
             ))}
           </select>
+           {/* Custom Arrow Icon */}
+           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+          </div>
         </div>
+
       </div>
 
       {/* === RESULTS GRID === */}
@@ -87,8 +132,6 @@ export default function Directory({ doctors }) {
             const docId = generateId(doctor.name);
             const waLink = `https://wa.me/${WA_NUMBER}?text=Hi Ocha, I would like to book an appointment with ${doctor.name}`;
             const stateName = getStateFromLocation(doctor.location);
-            
-            // Extract split specialties
             const { main, sub } = parseSpecialty(doctor.specialty);
 
             return (
@@ -111,7 +154,7 @@ export default function Directory({ doctors }) {
                       {doctor.name}
                     </h3>
                     
-                    {/* === SPLIT SPECIALTY DISPLAY === */}
+                    {/* Specialty Display */}
                     <div className="mb-3">
                         <p className="text-[10px] font-bold text-[#276CA1] uppercase tracking-widest">
                         {main}
@@ -165,7 +208,7 @@ export default function Directory({ doctors }) {
         <div className="text-center py-24 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
           <p className="text-slate-400 font-medium mb-4">No specialists found.</p>
           <button 
-            onClick={() => { setSearchTerm(''); setSelectedSpecialty('All'); }}
+            onClick={() => { setSearchTerm(''); setSelectedSpecialty('All'); setSelectedLocation('All'); }}
             className="px-6 py-2 bg-white border border-slate-200 rounded-full text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
           >
             Clear Filters
