@@ -4,7 +4,7 @@ import { Search, MapPin, Filter, Building2, Stethoscope } from 'lucide-react';
 export default function Directory({ doctors }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All');
-  const [selectedLocation, setSelectedLocation] = useState('All'); // New State
+  const [selectedLocation, setSelectedLocation] = useState('All');
   const WA_NUMBER = "60166062534"; 
 
   // Helper 1: Generate safe ID
@@ -24,6 +24,8 @@ export default function Directory({ doctors }) {
     if (lowerAddr.includes('penang') || lowerAddr.includes('pulau pinang') || lowerAddr.includes('georgetown')) return 'Penang';
     if (lowerAddr.includes('johor')) return 'Johor';
     if (lowerAddr.includes('melaka')) return 'Melaka';
+    if (lowerAddr.includes('sarawak') || lowerAddr.includes('kuching')) return 'Sarawak';
+    if (lowerAddr.includes('sabah') || lowerAddr.includes('kota kinabalu')) return 'Sabah';
     return 'Malaysia';
   };
 
@@ -40,14 +42,13 @@ export default function Directory({ doctors }) {
   // Get unique specialties
   const specialties = ['All', ...new Set(doctors.map(d => d.specialty).filter(Boolean))];
 
-  // Get unique locations (New)
+  // Get unique locations
   const locations = ['All', ...new Set(doctors.map(d => getStateFromLocation(d.location)).filter(Boolean))];
 
   const filteredDoctors = doctors.filter(doctor => {
     const term = searchTerm.toLowerCase();
     const doctorState = getStateFromLocation(doctor.location);
 
-    // 1. Search Logic
     const matchesSearch = (
       doctor.name?.toLowerCase().includes(term) ||
       doctor.hospital?.toLowerCase().includes(term) ||
@@ -55,10 +56,7 @@ export default function Directory({ doctors }) {
       doctor.location?.toLowerCase().includes(term)
     );
 
-    // 2. Specialty Logic
     const matchesSpecialty = selectedSpecialty === 'All' || doctor.specialty === selectedSpecialty;
-
-    // 3. Location Logic (New)
     const matchesLocation = selectedLocation === 'All' || doctorState === selectedLocation;
 
     return matchesSearch && matchesSpecialty && matchesLocation;
@@ -84,7 +82,7 @@ export default function Directory({ doctors }) {
         {/* Divider (Desktop) */}
         <div className="hidden md:block w-px bg-slate-100 my-2"></div>
 
-        {/* Location Dropdown (New) */}
+        {/* Location Dropdown */}
         <div className="relative min-w-[160px] md:max-w-[200px]">
           <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
           <select
@@ -96,7 +94,6 @@ export default function Directory({ doctors }) {
               <option key={idx} value={loc}>{loc === 'All' ? 'All Locations' : loc}</option>
             ))}
           </select>
-          {/* Custom Arrow Icon */}
           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
           </div>
@@ -117,7 +114,6 @@ export default function Directory({ doctors }) {
               <option key={idx} value={spec}>{spec === 'All' ? 'All Specialties' : spec}</option>
             ))}
           </select>
-           {/* Custom Arrow Icon */}
            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
           </div>
@@ -143,7 +139,8 @@ export default function Directory({ doctors }) {
                     <img 
                       src={doctor.image} 
                       alt={doctor.name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-slate-50 shadow-sm bg-slate-100"
+                      // FIX 1: object-top to focus on faces
+                      className="w-16 h-16 rounded-full object-cover object-top border-2 border-slate-50 shadow-sm bg-slate-100"
                       onError={(e) => { e.target.src = 'https://placehold.co/100?text=Dr'; }} 
                     />
                     <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full" title="Verified Specialist"></div>
@@ -160,8 +157,9 @@ export default function Directory({ doctors }) {
                         {main}
                         </p>
                         {sub && (
-                        <p className="text-[10px] font-semibold text-slate-500 flex items-center gap-1 mt-0.5 truncate">
-                            <span className="w-1 h-1 rounded-full bg-slate-300 shrink-0"></span>
+                        // FIX 2: Removed truncate, added leading-snug for clean wrapping
+                        <p className="text-[10px] font-semibold text-slate-500 flex items-start gap-1 mt-1 leading-snug">
+                            <span className="w-1 h-1 rounded-full bg-slate-300 shrink-0 mt-1"></span>
                             {sub}
                         </p>
                         )}
@@ -186,7 +184,8 @@ export default function Directory({ doctors }) {
                 <div className="mt-auto pt-5 border-t border-slate-50 flex gap-3">
                   <a 
                     href={`/doctor/${docId}`}
-                    className="w-[35%] py-2.5 flex items-center justify-center bg-white border border-slate-200 hover:border-slate-300 text-slate-600 font-bold rounded-xl transition-all text-xs"
+                    // FIX 3: font-semibold instead of font-bold + tracking-wide to fix 'f' clipping
+                    className="w-[35%] py-2.5 flex items-center justify-center bg-white border border-slate-200 hover:border-slate-300 text-slate-600 font-semibold tracking-wide rounded-xl transition-all text-xs"
                   >
                     Profile
                   </a>
